@@ -4,10 +4,12 @@
 #include <functional>
 #include <netinet/in.h>
 
+#include "ServerClient.h"
+
 class TcpServer {
 public:
   TcpServer(int port);
-  bool handle(std::function<void(int)> handler);
+  bool handle(std::function<void(ServerClient)> handler);
   ~TcpServer();
 
 private:

@@ -3,6 +3,7 @@
 #include <asm-generic/errno.h>
 #include <thread>
 #include <unistd.h>
+
 TcpServer::TcpServer(int port) {
   int opt = 1;
 
@@ -31,7 +32,8 @@ TcpServer::TcpServer(int port) {
     exit(EXIT_FAILURE);
   }
 }
-bool TcpServer::handle(std::function<void(int)> handler) {
+
+bool TcpServer::handle(std::function<void(ServerClient)> handler) {
   int new_socket;
 
   if ((new_socket = accept4(server_fd, (struct sockaddr *)&address,
@@ -44,7 +46,6 @@ bool TcpServer::handle(std::function<void(int)> handler) {
 
   handler(new_socket);
 
-  close(new_socket);
   return true;
 }
 TcpServer::~TcpServer() { shutdown(server_fd, SHUT_RDWR); }
