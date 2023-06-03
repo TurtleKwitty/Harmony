@@ -3,7 +3,7 @@
 
 #include <string>
 #include <string_view>
-#include <vector>
+#include <unordered_map>
 
 enum class HTTPRequestType {
   GET,
@@ -17,17 +17,28 @@ enum class HTTPRequestType {
   PATCH
 };
 
-class HTTPHeader {
+class HTTPRequest {
 public:
-  HTTPHeader(std::string requestString);
+  HTTPRequest(std::string requestString);
 
   HTTPRequestType requestType;
   // FIXME: This shold be a string_view but there's a big when the path is /
   // where it magically becomes ^E on return of constructor for no reason
   std::string path;
-  std::vector<std::pair<std::string_view, std::string_view>> headers;
+  std::unordered_map<std::string_view, std::string_view> headers;
+  std::string_view body;
 
   const std::string requestString;
+};
+
+class HTTPResponse {
+public:
+  int status;
+  std::string statusText;
+  std::unordered_map<std::string, std::string> headers;
+  std::string body;
+
+  std::string toString();
 };
 
 #endif
