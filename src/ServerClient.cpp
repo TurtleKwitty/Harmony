@@ -1,11 +1,10 @@
 #include "ServerClient.h"
-#include <netinet/in.h>
-#include <optional>
+#include <sys/socket.h>
 #include <unistd.h>
 
-#include <iostream>
-
 ServerClient::ServerClient(int connection_fd) : connection_fd(connection_fd) {}
+ServerClient::ServerClient(const ServerClient &client)
+    : connection_fd(client.connection_fd) {}
 ServerClient::ServerClient(ServerClient &&client)
     : connection_fd(client.connection_fd) {
   client.connection_fd = -1;
@@ -17,8 +16,7 @@ std::string ServerClient::rec() {
   std::string request;
   char buffer[1024] = {0};
 
-  int valread = read(connection_fd, buffer, sizeof(buffer));
-  std::cout << "Read " << valread << std::endl;
+  int valread = recv(connection_fd, buffer, sizeof(buffer), MSG_DONTWAIT);
   do {
     if (valread > 0)
       request.append(buffer, valread);
@@ -27,8 +25,10 @@ std::string ServerClient::rec() {
   return request;
 }
 
-void ServerClient::snd(const std::string &data) {
-  send(connection_fd, data.c_str(), data.size(), 0);
-  char EOT = 4;
-  send(connection_fd, &EOT, 1, 0);
+void ServerClient::snd(const std::string &data) const {
+  send(connection_fd, data.c_str(), data.size(), MSG_DONTWAIT | MSG_NOSIGNAL);
+}
+
+void ServerClient::snd(const char *data, size_t length) const {
+  send(connection_fd, data, length, MSG_DONTWAIT | MSG_NOSIGNAL);
 }

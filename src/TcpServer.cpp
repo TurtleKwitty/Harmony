@@ -1,6 +1,7 @@
 #include "TcpServer.h"
 
 #include <asm-generic/errno.h>
+#include <sys/socket.h>
 #include <thread>
 #include <unistd.h>
 
@@ -37,7 +38,7 @@ bool TcpServer::handle(std::function<void(ServerClient)> handler) {
   int new_socket;
 
   if ((new_socket = accept4(server_fd, (struct sockaddr *)&address,
-                            (socklen_t *)&addrlen, 0)) < 0) {
+                            (socklen_t *)&addrlen, SOCK_NONBLOCK)) < 0) {
     if (errno == EAGAIN || errno == EWOULDBLOCK)
       return false;
     perror("accept");
