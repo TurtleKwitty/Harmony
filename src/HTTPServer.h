@@ -8,6 +8,7 @@
 #include <unordered_map>
 
 #include "TcpServer.h"
+#include "string_rope.h"
 
 enum class HTTPRequestType {
   GET,
@@ -45,7 +46,7 @@ public:
   int status;
   std::string statusText;
   std::unordered_map<std::string, std::string> headers;
-  std::string body;
+  string_rope body;
 
   std::string toString() const;
 };

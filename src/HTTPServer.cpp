@@ -87,16 +87,16 @@ HTTPRequest::HTTPRequest(std::string &headerString, size_t offset,
 }
 
 std::string HTTPResponse::toString() const {
-  std::string response =
+  string_rope response =
       "HTTP/1.1 " + std::to_string(status) + " " + statusText + "\r\n";
-  for (auto header : headers) {
+  for (auto const &header : headers) {
     response += header.first + ": " + header.second + "\r\n";
   }
-  if (body.size())
+  if (!body.empty())
     response += "Content-Length: " + std::to_string(body.size()) + "\r\n";
   response += "\r\n";
   response += body;
-  return response;
+  return response.toString();
 };
 
 void sendResponse(const HTTPResponse &res, const ServerClient &client) {
@@ -115,7 +115,7 @@ void sendResponse(const HTTPResponse &res, const ServerClient &client) {
   pos += res.statusText.size();
   buffer[pos++] = '\r';
   buffer[pos++] = '\n';
-  for (auto header : res.headers) {
+  for (auto const &header : res.headers) {
     if (buffArray.max_size() - pos <=
         header.first.size() + header.second.size() + 6) {
       client.snd(buffer, pos);
@@ -134,10 +134,12 @@ void sendResponse(const HTTPResponse &res, const ServerClient &client) {
   buffer[pos++] = '\n';
   if (buffArray.max_size() - pos <= res.body.size()) {
     client.snd(buffer, pos);
-    client.snd(res.body);
+    client.snd(res.body.toString());
   } else {
-    std::memcpy(buffer + pos, res.body.c_str(), res.body.size());
-    pos += res.body.size();
+    for (auto segment : res.body.rope) {
+      std::memcpy(buffer + pos, segment.c_str(), segment.size());
+      pos += segment.size();
+    }
     client.snd(buffer, pos);
   }
 }
@@ -188,10 +190,10 @@ void HTTPServer::serve() {
           clientIter->lastReqTime = std::chrono::system_clock::now();
         }
         PipelinedHTTPRequest reqs(std::move(reqString));
-        for (auto req : reqs.requests) {
+        for (auto const &req : reqs.requests) {
           HTTPResponse res;
 
-          for (auto handler : handlers) {
+          for (auto const &handler : handlers) {
             if (handler(req, res)) {
               break;
             }
@@ -249,7 +251,7 @@ void HTTPServer::serve() {
     auto now = std::chrono::system_clock::now();
     if ((now - lastUpdateTime) >= std::chrono::seconds(1)) {
       std::chrono::high_resolution_clock::duration averageResponseTime;
-      for (auto responseDuration : responseDurationsSinceLastTick) {
+      for (auto const &responseDuration : responseDurationsSinceLastTick) {
         averageResponseTime += responseDuration;
       }
       averageResponseTime /= responseDurationsSinceLastTick.size()
@@ -275,7 +277,7 @@ void HTTPServer::serve() {
 
       std::chrono::high_resolution_clock::duration responseOnlyTimeAvg =
           std::chrono::nanoseconds(0);
-      for (auto responseOnlyTime : responseOnlyDurationsSinceLastTick) {
+      for (auto const &responseOnlyTime : responseOnlyDurationsSinceLastTick) {
         responseOnlyTimeAvg += responseOnlyTime;
       }
       responseOnlyTimeAvg /= responseOnlyDurationsSinceLastTick.size()
